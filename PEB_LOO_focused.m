@@ -1,0 +1,361 @@
+%% PEB with LOSOCV. Run PEB modelling and cross-validate for left out subject or state.
+
+loadpaths
+spm('Defaults','EEG');
+
+%% Collate DCMs into a GCM file
+% ---------------------------------------------------------------
+%% DMN
+GCM = {
+            'XXX_DMN.mat';            
+            'XXX_DMN.mat';
+            'XXX_03_DMN.mat';
+            'XXX_03_DMN.mat';
+                      
+            };
+
+%% SAL
+% GCM = {
+%            
+%            
+%             };
+
+%% CEN
+% GCM = {
+%            
+%             
+%             };
+
+%%
+% LARGE
+
+% GCM = {
+%            
+%             
+%             };
+
+%% 
+% Write results if needed
+% save('GCM_DMN_PEBopt1.mat','GCM');
+% save('GCM_SAL_PEBopt1.mat','GCM');
+% save('GCM_CEN_PEBopt1.mat','GCM');
+% save('GCM_Full_PEBopt1.mat','GCM');
+
+
+%% 
+% Specify PEB model settings 
+M = struct();
+M.alpha = 1;
+M.beta  = 16;
+M.hE    = 0;
+M.hC    = 1/16;
+M.Q     = 'all';
+M.maxit  = 256;
+N = size(GCM,1);
+
+% Specify design matrix for N subjects.
+mean = ones(N,1);
+difference = [zeros(N/2,1); ones(N/2,1)];
+M.X = [mean,difference]; 
+M.Xnames = {'mean','difference'}; 
+
+% Choose field
+field = {'A'};
+
+% Estimate model
+[PEB, GCM_Updated] = spm_dcm_peb(GCM,M,field); 
+
+% save('PEB_DMNopt1.mat','PEB');
+% save('PEB_SALopt1.mat','PEB');
+% save('PEB_CENopt1.mat','PEB');
+% save('PEB_Fullopt1.mat','PEB');
+
+%% 
+% Search over nested PEB models.
+
+[BMA, BMR] = spm_dcm_peb_bmc(PEB(1)); % prune away any parameters from the PEB which don't contribute
+                                      % to the model evidence.
+                                     
+
+%BMA = spm_dcm_bmc_peb(PEB(1));% Instead,asks which combination of connectivity parameters provides 
+                               % the best estimate of between-subject effects (e.g. age or 
+                               % clinical scores). In other words, it scores every combination
+                               % of connectivity structures and regressors
+                               % (covariates). This, if interest lies in
+                               % covariates (instead of connections). 
+%% 
+% Review results
+spm_dcm_peb_review(BMA,GCM);
+
+
+%% Cross-validation
+% ---------------------------------------------------------------
+
+% Set 'field' to the connections the classification is based on
+
+%------- DMN --------
+
+% All connections 
+% field = {'A{1,1}(3,1)','A{1,1}(4,1)','A{1,1}(3,2)','A{1,1}(4,2)','A{1,1}(4,3)'... %Forward
+% ,'A{1,2}(1,3)','A{1,2}(2,3)','A{1,2}(1,4)','A{1,2}(2,4)','A{1,2}(3,4)'...     %Backward
+% ,'A{1,3}(2,1)','A{1,3}(1,2)'};
+
+
+% frontoparietal
+% field = {'A{1,1}(4,1)}','A{1,1}(4,3)','A{1,2}(1,4)','A{1,2}(2,4)','A{1,2}(3,4)'}; 
+
+
+%%
+%------- SAL --------
+
+% All connections
+% field = {'A{1,1}(3,1)','A{1,1}(4,1)','A{1,1}(3,2)','A{1,1}(5,2)','A{1,1}(3,4)','A{1,1}(3,5)'... %Forward
+% ,'A{1,2}(1,3)','A{1,2}(2,3)','A{1,2}(4,3)','A{1,2}(5,3)','A{1,2}(1,4)','A{1,2}(2,5)'...     %Backward
+% ,'A{1,3}(2,1)','A{1,3}(1,2)','A{1,3}(5,4)','A{1,3}(4,5)'};   
+
+% frontoparietal
+% field = {'A{1,1}(3,1)','A{1,1}(4,1)','A{1,1}(3,2)','A{1,1}(5,2)'...
+% ,'A{1,2}(1,3)','A{1,2}(2,3)','A{1,2}(2,5)'}; 
+
+
+%%
+%------- CEN --------
+
+% All connections 
+% field = {'A{1,1}(3,1)','A{1,1}(4,1)','A{1,1}(3,2)','A{1,1}(5,2)','A{1,1}(3,4)','A{1,1}(3,5)'... %Forward
+% ,'A{1,2}(1,3)','A{1,2}(2,3)','A{1,1}(4,3)','A{1,2}(5,3)','A{1,2}(1,4)','A{1,2}(2,5)'...                   %Backward
+% ,'A{1,3}(2,1)','A{1,3}(1,2)','A{1,3}(5,4)','A{1,3}(4,5)'};   
+
+
+% frontoparietal
+% field = {'A{1,1}(3,1)','A{1,1}(3,2)','A{1,1}(5,2)'...
+%     ,'A{1,2}(1,3)','A{1,2}(1,4)','A{1,2}(2,5)'}; 
+
+
+%%
+%------- LARGE --------
+
+% All connections
+% field = {'A{1,1}(3,1)','A{1,1}(4,1)','A{1,1}(3,2)','A{1,1}(4,2)','A{1,1}(4,3)','A{1,1}(7,3)'...%Forward
+% ,'A{1,1}(7,5)','A{1,1}(8,5)','A{1,1}(7,6)','A{1,1}(9,6)','A{1,1}(7,8)','A{1,1}(7,9)','A{1,1}(3,10)'...
+% ,'A{1,1}(12,10)','A{1,1}(13,10)','A{1,1}(3,11)','A{1,1}(12,11)','A{1,1}(14,11)','A{1,1}(12,13)'...
+% ,'A{1,1}(12,14)','A{1,2}(1,3)','A{1,2}(2,3)','A{1,2}(10,3)','A{1,2}(11,3)','A{1,2}(1,4)'...
+% ,'A{1,2}(2,4)','A{1,2}(3,4)','A{1,2}(3,7)','A{1,2}(5,7)','A{1,2}(6,7)','A{1,2}(8,7)','A{1,2}(9,7)'...
+% ,'A{1,2}(5,8)','A{1,2}(6,9)','A{1,2}(10,12)','A{1,2}(11,12)','A{1,2}(13,12)','A{1,2}(14,12)'...
+% ,'A{1,2}(10,13)','A{1,2}(11,14)','A{1,3}(2,1)','A{1,3}(1,2)','A{1,3}(6,5)','A{1,3}(5,6)'...
+% ,'A{1,3}(9,8)','A{1,3}(8,9)','A{1,3}(11,10)','A{1,3}(10,11)','A{1,3}(14,13)','A{1,3}(13,14)'}; 
+
+
+%LARGE frontoparietal 
+field = {'A{1,1}(4,2)','A{1,1}(4,3)','A{1,1}(7,3)','A{1,1}(7,5)','A{1,1}(8,5)'...
+,'A{1,1}(7,6)','A{1,1}(9,6)','A{1,1}(12,10)','A{1,1}(13,10)','A{1,1}(12,11)'...
+,'A{1,1}(14,11)','A{1,2}(1,4)','A{1,2}(2,4)','A{1,2}(3,4)','A{1,2}(3,7)'...
+,'A{1,2}(5,7)','A{1,2}(6,7)','A{1,2}(10,12)','A{1,2}(11,12)','A{1,2}(10,13)'...
+,'A{1,2}(11,14)'};
+
+ 
+%% 
+
+% LOSOCV - leave-one-subject-out
+[qE,qC,Q] = spm_dcm_loo2(GCM,M,field); % Leave both datasets out from one participant
+                                                                            
+%%
+%----------------------------------------------------------  
+%LOSOCV - Leave-one-state-out
+
+% TEST data
+% DMN
+TEST = {
+        'XXX_04_DMN.mat';            
+        'XXX_04_DMN.mat';
+       };
+       
+% TRAIN data 
+GCM =  {
+        'XXX_01_DMN.mat';            
+        'XXX_01_DMN.mat';
+        
+        'XXX_03_DMN.mat';
+        'XXX_03_DMN.mat';
+       };
+
+%%   
+% Specify design matrix for N subjects.
+N = size(GCM,1);
+mean = ones(N,1);
+difference = [zeros(N/2,1); ones(N/2,1)];
+M.X = [mean,difference]; 
+M.Xnames = {'mean','difference'};
+
+Y = [1 0]; % Design matrix for test data
+X = M.X; 
+TRAIN = GCM; 
+iX = 2; % column of desing matrix to be predicted
+
+% Leave one out scheme
+Ns = length(TEST);
+
+for i = 1:Ns
+    TRAIN(i) = []; %remove datasets from training for LOO participant
+    TRAIN(i+9) = []; 
+    
+    [Ep,Cp,P] = spm_dcm_ppd(TEST(i),TRAIN,Y,X,field);
+    qE(i)     = Ep;
+    qC(i)     = Cp;
+    Q(:,i)    = P;
+    
+    TRAIN = GCM; %Set training data back to starting point
+end
+
+% save('DMNLOO.mat'); 
+
+%% Plotting
+
+if spm_get_defaults('cmdline'), return; end
+
+spm_figure('GetWin','LOO cross-validation');clf
+subplot(2,2,1), spm_plot_ci(qE,qC), hold on
+plot(M.X(:,2),':'), hold off
+xlabel('subject','FontSize',12), ylabel('group effect','FontSize',12)
+title('Out of sample estimates','FontSize',16)
+spm_axis tight, axis square
+
+% classical inference on classification accuracy
+%--------------------------------------------------------------------------
+% [T,df] = spm_ancova(M.X(:,1:2),[],qE(:),[0;1]);
+% r      = corrcoef(qE(:),M.X(:,2));
+% r      = full(r(1,2));
+% 
+% if isnan(T)
+%     p = NaN;
+% else
+%     p = 1 - spm_Tcdf(T,df(2));
+% end
+% str = sprintf('corr(df:%-2.0f) = %-0.2f: p = %-0.5f',df(2),r,p);
+% 
+% subplot(2,2,2)
+% plot(M.X(:,2),qE,'o','Markersize',8)
+% xlabel('group effect','FontSize',12), ylabel('estimate','FontSize',12)
+% title(str,'FontSize',16)
+% axis square
+
+if size(Q,1) > 2
+    % Continuous prediction
+    subplot(2,1,2), imagesc(1:Ns,unique(M.X(:,2)),Q), hold on
+    plot(M.X(:,2),'.c','MarkerSize',32), hold off
+    xlabel('Subject','FontSize',12);
+    ylabel('levels of group effect','FontSize',12)
+    title('Predictive posterior (and true values)','FontSize',16)
+    axis square xy
+else
+    % Binary classification
+    subplot(4,1,3), bar(Q(1,:))
+    xlabel('subject','FontSize',12);
+    ylabel('posterior probability','FontSize',12);
+    title('Group effect (group 1)','FontSize',16);
+    axis([0 (Ns + 1) 0 1]);
+    line([0 Ns+0.5],[0.95 0.95],'LineStyle','--','Color','r');
+    
+    subplot(4,1,4), bar(Q(2,:))
+    xlabel('subject','FontSize',12);
+    ylabel('posterior probability','FontSize',12);
+    title('Group effect (group 2)','FontSize',16);
+    axis([0 (Ns + 1) 0 1]);
+    line([0 Ns+0.5],[0.95 0.95],'LineStyle','--','Color','r');
+end
+
+
+%%
+% Accuracy & Confusion matrix
+L = length(Q);
+c = zeros(L,1);
+n = 1;
+r = 1;
+
+% This when test data = train/2 -- Binary precision
+n = 1;
+
+while n < 10
+        if Q(1,n) > 0.50
+           c(n,1) = 1;
+        else
+           c(n,1) = 0;
+        end       
+n = n + 1;
+end
+
+% Assing numbers of true/false positives and negatives
+C = zeros(2,1);
+
+C(1,1) = sum(c(:,1) == 1); 
+C(2,1) = sum(c(:,1) == 0);
+
+% Accuracy
+Tr = C(1,1); 
+Tot = sum(C(:)); 
+
+Acc = Tr/Tot;
+fprintf('Accuracy = %4.2f\n', Acc);  
+
+
+%%
+% This when test = train (equal in size)
+r = 1;
+
+for n = 1:length(Q);
+    if n <= 10
+        if Q(1,n) >= 0.51
+           c(n,1) = 1;
+        else
+          c(n,1) = 0;
+        end
+        
+    elseif n >= 11
+        if Q(1,n) <= 0.5 
+           c(r,2) = 1;
+        else
+           c(r,2) = 0;
+        end
+       r = r + 1;
+    end
+    n = n+1;
+end
+
+% Assing numbers of true/false positives and negatives
+C = zeros(2,2);
+
+C(1,1) = sum(c(:,1) == 1); 
+C(1,2) = sum(c(:,1) == 0);
+C(2,1) = sum(c(:,2) == 0);
+C(2,2) = sum(c(:,2) == 1); 
+      
+% Accuracy
+Tr = C(1,1) + C(2,2);
+Tot = sum(C(:)); 
+
+Acc = Tr/Tot;
+fprintf('Accuracy = %4.2f\n', Acc);
+
+%% AUC
+
+    figure; 
+    tlabels = [];
+    tlabels(:,1) = zeros(1,10);
+    tlabels(:,2) = ones(1,10);
+    tlabels = num2cell(tlabels,2);
+    
+    posclass = 0;
+ 
+    scores = [];
+    scores(:,1) = Q(1,1:10);
+    scores(:,2) = Q(1,11:end);
+    scores = num2cell(scores,2); 
+    
+    [X,Y,T,AUC] = perfcurve(tlabels,scores,posclass,'xvals','all');
+
+%     subplot(4,2,d)
+    plot(X,Y)
+    
+    str = sprintf('AUC: %.2f',AUC);
+    text(0.5,0.2,str,'Color','k','FontSize',15)  
+
